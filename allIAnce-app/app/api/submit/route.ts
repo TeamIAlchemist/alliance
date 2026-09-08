@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { hashCode } from '@/lib/code';
-import { score } from '@/lib/scoring';
+import { hashCode } from '../../../lib/code';
+import { score } from '../../../lib/scoring';
 
 // POST { code, participant, lang, answers, open } — scoring serveur puis insertion.
 export async function POST(req: NextRequest) {
