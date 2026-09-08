@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { hashCode } from '../../../lib/code';
 import { score } from '../../../lib/scoring';
 
