@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase';
+import { supabaseBrowser } from '../../lib/supabase';
 // Espace facilitateur : authentifié (Supabase Auth). RLS garantit qu'on ne voit QUE ses clients.
 // TODO(dev): 1) login Supabase  2) liste clients/équipes (+ suppression)  3) cartographie & rapport
 //            4) génération PDF côté serveur (voir build_report.py comme spec visuelle)
