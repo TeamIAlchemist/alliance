@@ -35,10 +35,11 @@ export default function Facilitator() {
   const [resps, setResps] = useState<Resp[]>([]);
   const [teamName, setTeamName] = useState(''); const [clientName, setClientName] = useState('');
   const [nc, setNc] = useState(''); const [nt, setNt] = useState(''); const [ncode, setNcode] = useState(''); const [msg, setMsg] = useState('');
+  const [tree, setTree] = useState<any[]>([]); const [pendingDel, setPendingDel] = useState('');
   const R = RC[lang];
 
   useEffect(() => { getDb().auth.getSession().then(({ data }) => setAuthed(!!data.session)); }, []);
-  useEffect(() => { if (authed) getDb().from('clients').select('id,name').then(({ data }) => setClients(data || [])); }, [authed]);
+  useEffect(() => { if (authed) loadTree(); }, [authed]);
 
   async function login() { setErr(''); const { error } = await getDb().auth.signInWithPassword({ email, password: pass }); if (error) setErr(error.message); else setAuthed(true); }
   async function logout() { await getDb().auth.signOut(); setAuthed(false); setClients([]); setTeams([]); setResps([]); setTeamName(''); }
@@ -48,13 +49,40 @@ export default function Facilitator() {
     const r = await fetch('/api/facilitator/team', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientName: nc, teamName: nt, code: ncode, accessToken: data.session?.access_token }) });
     if (r.ok) { setMsg((lang === 'fr' ? 'Créé. Code à diffuser : ' : 'Created. Code to share: ') + ncode); setNc(''); setNt(''); setNcode('');
-      getDb().from('clients').select('id,name').then(({ data }) => setClients(data || [])); }
+      loadTree(); }
     else setMsg('Erreur : ' + ((await r.json()).error || r.status));
   }
-  async function openClient(c: Client) { setClientName(c.name); const { data } = await getDb().from('teams').select('id,name').eq('client_id', c.id); setTeams(data || []); setResps([]); setTeamName(''); }
-  async function openTeam(tm: Team) {
-    setTeamName(tm.name);
-    const { data: waves } = await getDb().from('waves').select('id').eq('team_id', tm.id);
+  async function loadTree() {
+    const { data: cs } = await getDb().from('clients').select('id,name');
+    const cl = cs || []; setClients(cl);
+    const cids = cl.map((c: any) => c.id);
+    if (!cids.length) { setTree([]); return; }
+    const { data: ts } = await getDb().from('teams').select('id,name,client_id').in('client_id', cids);
+    const tl = ts || []; const tids = tl.map((t: any) => t.id);
+    const w2t: Record<string, string> = {}; const cnt: Record<string, number> = {}; const mem: Record<string, string[]> = {};
+    if (tids.length) {
+      const { data: ws } = await getDb().from('waves').select('id,team_id').in('team_id', tids);
+      (ws || []).forEach((w: any) => { w2t[w.id] = w.team_id; });
+      const wids = Object.keys(w2t);
+      if (wids.length) {
+        const { data: rs } = await getDb().from('responses').select('wave_id,participant').in('wave_id', wids);
+        (rs || []).forEach((r: any) => { const t = w2t[r.wave_id]; if (!t) return; cnt[t] = (cnt[t] || 0) + 1; (mem[t] = mem[t] || []); if (!mem[t].includes(r.participant)) mem[t].push(r.participant); });
+      }
+    }
+    setTree(cl.map((c: any) => ({ id: c.id, name: c.name,
+      teams: tl.filter((t: any) => t.client_id === c.id).map((t: any) => ({ id: t.id, name: t.name, count: cnt[t.id] || 0, members: mem[t.id] || [] })) })));
+  }
+  async function deleteClient(id: string) {
+    if (pendingDel !== 'c:' + id) { setPendingDel('c:' + id); return; }
+    setPendingDel(''); await getDb().from('clients').delete().eq('id', id); setResps([]); setTeamName(''); loadTree();
+  }
+  async function deleteTeam(id: string) {
+    if (pendingDel !== 't:' + id) { setPendingDel('t:' + id); return; }
+    setPendingDel(''); await getDb().from('teams').delete().eq('id', id); setResps([]); setTeamName(''); loadTree();
+  }
+  async function openTeam(teamId: string, tName: string, cName: string) {
+    setTeamName(tName); setClientName(cName);
+    const { data: waves } = await getDb().from('waves').select('id').eq('team_id', teamId);
     const ids = (waves || []).map((w: any) => w.id); if (!ids.length) { setResps([]); return; }
     const { data } = await getDb().from('responses').select('participant,scores,open_answers').in('wave_id', ids); setResps(data || []);
   }
@@ -123,23 +151,48 @@ export default function Facilitator() {
       </div>
 
       <div className="noprint" style={{ background: '#141418', border: '1px solid rgba(217,180,81,0.15)', borderRadius: 12, padding: 14, marginTop: 14 }}>
-        <div style={{ fontSize: 12, color: '#9a948a', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>{lang === 'fr' ? 'Nouvelle équipe' : 'New team'}</div>
+        <div style={{ fontSize: 12, color: '#9a948a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>{lang === 'fr' ? 'Nouvelle équipe' : 'New team'}</div>
+        <div style={{ fontSize: 12, color: '#6f6a60', marginBottom: 8 }}>{lang === 'fr' ? 'Remplis les trois champs : entreprise, équipe, puis le code que les participants saisiront.' : 'Fill all three: company, team, then the code participants will enter.'}</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input placeholder={lang === 'fr' ? 'Nom du client' : 'Client name'} value={nc} onChange={e => setNc(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
+          <input placeholder={lang === 'fr' ? 'Nom du client (entreprise)' : 'Client name (company)'} value={nc} onChange={e => setNc(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
           <input placeholder={lang === 'fr' ? "Nom de l'équipe" : 'Team name'} value={nt} onChange={e => setNt(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
-          <input placeholder="TIA-XXXX-XXXX" value={ncode} onChange={e => setNcode(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
+          <input placeholder={lang === 'fr' ? 'Code à distribuer (ex. TIA-2026-MKTG)' : 'Code to share (e.g. TIA-2026-MKTG)'} value={ncode} onChange={e => setNcode(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
           <button onClick={createTeam} disabled={!nt || !ncode || !nc} style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, cursor: 'pointer' }}>{lang === 'fr' ? 'Créer' : 'Create'}</button>
         </div>
         {msg && <div style={{ fontSize: 13, color: '#c9b98f', marginTop: 8 }}>{msg}</div>}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }} className="noprint">
-        {clients.map(c => <button key={c.id} onClick={() => openClient(c)} style={{ padding: '8px 14px', borderRadius: 8, background: '#141418', color: '#e7c86a', border: '1px solid rgba(217,180,81,0.4)', cursor: 'pointer' }}>{c.name}</button>)}
-        {!clients.length && <p style={{ color: '#9a948a' }}>{lang === 'fr' ? 'Aucun client. Crée une équipe ci-dessus.' : 'No client yet. Create a team above.'}</p>}
+      <div style={{ marginTop: 16 }} className="noprint">
+        {!tree.length && <p style={{ color: '#9a948a' }}>{lang === 'fr' ? 'Aucun client. Crée une équipe ci-dessus.' : 'No client yet. Create a team above.'}</p>}
+        {tree.map((c: any) => (
+          <div key={c.id} style={{ background: '#141418', border: '1px solid rgba(217,180,81,0.18)', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ fontWeight: 700, color: '#e7c86a', fontSize: 15 }}>{c.name}</div>
+              <span onClick={() => deleteClient(c.id)} style={{ cursor: 'pointer', fontSize: 12, color: pendingDel === 'c:' + c.id ? '#e07a6a' : '#8a8378', border: '1px solid ' + (pendingDel === 'c:' + c.id ? '#c0392b' : 'rgba(217,180,81,0.25)'), borderRadius: 8, padding: '4px 10px' }}>
+                {pendingDel === 'c:' + c.id ? (lang === 'fr' ? 'Confirmer la suppression ?' : 'Confirm delete?') : (lang === 'fr' ? 'Supprimer le client' : 'Delete client')}
+              </span>
+            </div>
+            {!c.teams.length && <div style={{ color: '#6f6a60', fontSize: 13, marginTop: 8 }}>{lang === 'fr' ? 'Aucune équipe.' : 'No team.'}</div>}
+            {c.teams.map((t: any) => (
+              <div key={t.id} style={{ borderTop: '1px solid #26241d', padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ color: '#ece7dd' }}>{t.name}</span>
+                  <span style={{ fontSize: 11, borderRadius: 20, padding: '1px 8px', border: '1px solid ' + (t.count ? '#3a7a4a' : 'rgba(217,180,81,0.25)'), color: t.count ? '#7fca8f' : '#9a948a' }}>
+                    {t.count ? (lang === 'fr' ? `Actif \u00b7 ${t.count} r\u00e9ponse(s)` : `Active \u00b7 ${t.count} response(s)`) : (lang === 'fr' ? 'En attente' : 'Awaiting')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => openTeam(t.id, t.name, c.name)} disabled={!t.count} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, color: '#2a1e0a', backgroundImage: GOLD, cursor: t.count ? 'pointer' : 'not-allowed', opacity: t.count ? 1 : 0.4 }}>{lang === 'fr' ? 'Voir le rapport' : 'View report'}</button>
+                  <span onClick={() => deleteTeam(t.id)} style={{ cursor: 'pointer', fontSize: 12, color: pendingDel === 't:' + t.id ? '#e07a6a' : '#8a8378', border: '1px solid ' + (pendingDel === 't:' + t.id ? '#c0392b' : 'rgba(217,180,81,0.25)'), borderRadius: 8, padding: '5px 10px' }}>{pendingDel === 't:' + t.id ? (lang === 'fr' ? 'Confirmer ?' : 'Confirm?') : (lang === 'fr' ? 'Supprimer' : 'Delete')}</span>
+                </div>
+                </div>
+                {t.members.length > 0 && <div style={{ fontSize: 12, color: '#9a948a', marginTop: 6 }}>{(lang === 'fr' ? 'Membres : ' : 'Members: ') + t.members.join(', ')}</div>}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-      {teams.length > 0 && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }} className="noprint">
-        {teams.map(tm => <button key={tm.id} onClick={() => openTeam(tm)} style={{ padding: '8px 14px', borderRadius: 8, background: '#141418', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)', cursor: 'pointer' }}>{tm.name}</button>)}
-      </div>}
       {teamName && !A && <p style={{ color: '#9a948a', marginTop: 20 }}>{lang === 'fr' ? 'Aucune réponse pour cette équipe.' : 'No responses for this team.'}</p>}
 
       {A && <section id="report" style={{ marginTop: 20, background: '#ffffff', color: INK, borderRadius: 12, padding: '30px 32px' }}>

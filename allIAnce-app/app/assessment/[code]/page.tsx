@@ -2,6 +2,10 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ITEMS, SCORED_COUNT, SECTION_LABELS, SECTION_ORDER, Item } from '@/lib/instrument';
+import { score, bandA_, polarity } from '@/lib/scoring';
+import { EXPL as EXPL_, POL_LABELS } from '@/lib/analysis';
+const EXPL: any = EXPL_;
+const posFor = (A: number, B: number) => { const a = (A - 5) / 20, b = (B - 4) / 16; return Math.max(0, Math.min(1, 0.5 + (b - a) / 2)); };
 
 const GOLD = 'linear-gradient(90deg,#a6643c,#d9b451,#f2dc9b,#d9b451)';
 type Lang = 'fr' | 'en';
@@ -9,11 +13,13 @@ const STR = {
   fr: { title: 'Diagnostic All(IA)nce', id: 'Votre identifiant (prénom, initiales ou pseudo)',
         low: 'Pas du tout', high: 'Tout à fait', optional: '(facultatif)',
         submit: 'Envoyer mes réponses', progress: 'répondues', done: 'Merci — vos réponses sont enregistrées.',
-        need: 'Renseignez votre identifiant pour commencer.' },
+        need: 'Renseignez votre identifiant pour commencer.',
+        thanks: 'Merci !', saved: 'Vos réponses sont enregistrées. Voici votre positionnement personnel :', red: 'Reddition', res: 'Résistance', finish: 'Terminer' },
   en: { title: 'All(IA)nce diagnostic', id: 'Your identifier (first name, initials or nickname)',
         low: 'Not at all', high: 'Fully', optional: '(optional)',
         submit: 'Submit my answers', progress: 'answered', done: 'Thank you - your answers have been saved.',
-        need: 'Enter your identifier to begin.' },
+        need: 'Enter your identifier to begin.',
+        thanks: 'Thank you!', saved: 'Your answers are saved. Here is your personal positioning:', red: 'Surrender', res: 'Resistance', finish: 'Finish' },
 };
 
 export default function Assessment() {
@@ -24,6 +30,7 @@ export default function Assessment() {
   const [open, setOpen] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sc, setSc] = useState<any>(null);
   const t = STR[lang];
 
   const ordered = useMemo(() => {
@@ -42,7 +49,7 @@ export default function Assessment() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, participant: participant.trim(), lang, answers, open }),
       });
-      if (r.ok) setDone(true);
+      if (r.ok) { setSc(score(answers)); setDone(true); }
       else alert('Erreur : ' + ((await r.json()).error || r.status));
     } catch (e) { alert('Erreur réseau'); }
     setBusy(false);
@@ -51,9 +58,19 @@ export default function Assessment() {
   if (done) return (
     <main style={{ minHeight: '100vh', background: '#0d0d0d', color: '#ece7dd',
                    fontFamily: 'system-ui, sans-serif', display: 'flex',
-                   alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
-      <div><h2 style={{ backgroundImage: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text',
-                        color: 'transparent' }}>All(IA)nce</h2><p>{t.done}</p></div>
+                   alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
+        <h2 style={{ backgroundImage: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{t.thanks}</h2>
+        <p style={{ color: '#9a948a' }}>{t.saved}</p>
+        {sc && <div style={{ background: '#141418', border: '1px solid rgba(217,180,81,0.18)', borderRadius: 12, padding: 20, marginTop: 12, textAlign: 'left' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#9a948a' }}><span>{t.red}</span><span>{t.res}</span></div>
+          <div style={{ position: 'relative', height: 16, borderRadius: 10, background: 'linear-gradient(90deg,#a6643c,#3a3a3e,#1f3d3d)', border: '1px solid #26241d' }}>
+            <div style={{ position: 'absolute', top: -4, left: (posFor(sc.A, sc.B) * 100).toFixed(1) + '%', width: 4, height: 24, background: '#f2dc9b', borderRadius: 3, transform: 'translateX(-50%)' }} />
+          </div>
+          <p style={{ color: '#b8b2a7', fontSize: 13.5, lineHeight: 1.6, marginTop: 12 }}>{EXPL[lang].A[bandA_(sc.A)].t} {EXPL[lang].POL[polarity(sc.A, sc.B)]}</p>
+        </div>}
+        <a href="/" style={{ display: 'inline-block', marginTop: 18, padding: '12px 24px', borderRadius: 10, fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, textDecoration: 'none' }}>{t.finish}</a>
+      </div>
     </main>
   );
 
