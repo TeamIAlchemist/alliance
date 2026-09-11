@@ -36,6 +36,7 @@ export default function Facilitator() {
   const [teamName, setTeamName] = useState(''); const [clientName, setClientName] = useState('');
   const [nc, setNc] = useState(''); const [nt, setNt] = useState(''); const [ncode, setNcode] = useState(''); const [msg, setMsg] = useState('');
   const [tree, setTree] = useState<any[]>([]); const [pendingDel, setPendingDel] = useState('');
+  const [showReport, setShowReport] = useState(false);
   const R = RC[lang];
 
   useEffect(() => { getDb().auth.getSession().then(({ data }) => setAuthed(!!data.session)); }, []);
@@ -81,7 +82,7 @@ export default function Facilitator() {
     setPendingDel(''); await getDb().from('teams').delete().eq('id', id); setResps([]); setTeamName(''); loadTree();
   }
   async function openTeam(teamId: string, tName: string, cName: string) {
-    setTeamName(tName); setClientName(cName);
+    setTeamName(tName); setClientName(cName); setShowReport(false);
     const { data: waves } = await getDb().from('waves').select('id').eq('team_id', teamId);
     const ids = (waves || []).map((w: any) => w.id); if (!ids.length) { setResps([]); return; }
     const { data } = await getDb().from('responses').select('participant,scores,open_answers').in('wave_id', ids); setResps(data || []);
@@ -145,7 +146,9 @@ export default function Facilitator() {
         <h2 style={{ margin: 0 }}>Clients</h2>
         <div style={{ display: 'flex', gap: 10 }}>
           <span onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'EN' : 'FR'}</span>
-          {teamName && <span onClick={() => window.print()} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'Imprimer / PDF' : 'Print / PDF'}</span>}
+          {teamName && !showReport && <span onClick={() => setShowReport(true)} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'Rapport complet' : 'Full report'}</span>}
+          {teamName && showReport && <span onClick={() => setShowReport(false)} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? '← Synthèse' : '← Summary'}</span>}
+          {teamName && showReport && <span onClick={() => window.print()} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'Imprimer / PDF' : 'Print / PDF'}</span>}
           <span onClick={logout} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.25)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#9a948a' }}>{lang === 'fr' ? 'Se déconnecter' : 'Sign out'}</span>
         </div>
       </div>
@@ -195,7 +198,76 @@ export default function Facilitator() {
       </div>
       {teamName && !A && <p style={{ color: '#9a948a', marginTop: 20 }}>{lang === 'fr' ? 'Aucune réponse pour cette équipe.' : 'No responses for this team.'}</p>}
 
-      {A && <section id="report" style={{ marginTop: 20, background: '#ffffff', color: INK, borderRadius: 12, padding: '30px 32px' }}>
+      {A && !showReport && (
+        <section style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ margin: 0, backgroundImage: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{clientName} \u2014 {teamName}</h2>
+            <button onClick={() => setShowReport(true)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, cursor: 'pointer' }}>{lang === 'fr' ? 'Voir le rapport complet' : 'View full report'}</button>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
+            {[[String(A.n), R.kpi.resp], [A.mA.toFixed(0) + '/25', R.kpi.red], [A.mB.toFixed(0) + '/20', R.kpi.res], [(POL_LABELS as any)[lang][polarity(A.mA, A.mB)], R.kpi.pol]].map((x: any, i) => (
+              <div key={i} style={{ flex: 1, minWidth: 130, background: '#101012', border: '1px solid #26241d', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#f2dc9b' }}>{x[0]}</div>
+                <div style={{ fontSize: 11, color: '#9a948a', textTransform: 'uppercase', letterSpacing: 1 }}>{x[1]}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#9a948a', marginTop: 16 }}><span>{R.kpi.red}</span><span>{R.kpi.res}</span></div>
+          <div style={{ position: 'relative', height: 16, borderRadius: 10, background: 'linear-gradient(90deg,#a6643c,#3a3a3e,#1f3d3d)', border: '1px solid #26241d' }}>
+            <div style={{ position: 'absolute', top: -4, left: (posFor(A.mA, A.mB) * 100).toFixed(1) + '%', width: 4, height: 24, background: '#f2dc9b', borderRadius: 3, transform: 'translateX(-50%)' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 18 }}>
+            <div style={{ flex: 1, minWidth: 300 }}>
+              <h3 style={{ color: '#d9b451', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{R.mapTitle}</h3>
+              <div style={{ height: 300 }}><ResponsiveContainer><ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.14} />
+                <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.18} />
+                <ReferenceLine x={12} stroke="#ffffff22" /><ReferenceLine y={18} stroke="#ffffff22" />
+                <XAxis type="number" dataKey="x" domain={[4, 20]} tick={{ fill: '#9a948a', fontSize: 11 }} />
+                <YAxis type="number" dataKey="y" domain={[5, 25]} tick={{ fill: '#9a948a', fontSize: 11 }} />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                <Scatter data={A.scatter} fill="#f2dc9b" />
+                <Scatter data={[{ x: A.mB, y: A.mA }]} fill="#a6643c" shape="star" />
+              </ScatterChart></ResponsiveContainer></div>
+            </div>
+            <div style={{ flex: 1, minWidth: 300 }}>
+              <h3 style={{ color: '#d9b451', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{R.compTitle}</h3>
+              <div style={{ height: 300 }}><ResponsiveContainer><RadarChart data={A.radar} outerRadius={100}>
+                <PolarGrid stroke="#333" /><PolarAngleAxis dataKey="comp" tick={{ fill: '#ece7dd', fontSize: 11 }} />
+                <Radar name={R.compLegend.cap} dataKey="cap" stroke="#d9b451" fill="#d9b451" fillOpacity={0.20} />
+                <Radar name={R.compLegend.sig} dataKey="sig" stroke="#a6643c" fill="#a6643c" fillOpacity={0.16} />
+                <Legend wrapperStyle={{ color: '#ece7dd', fontSize: 11 }} />
+              </RadarChart></ResponsiveContainer></div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 12 }}>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <h3 style={{ color: '#d9b451', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{R.hsdTitle}</h3>
+              {[['Container', A.hsd[0], 15], ['Difference', A.hsd[1], 15], ['Exchange', A.hsd[2], 10]].map((x: any, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
+                  <div style={{ width: 100, fontSize: 12, color: '#9a948a' }}>{x[0]}</div>
+                  <div style={{ flex: 1, height: 10, background: '#26241d', borderRadius: 6, overflow: 'hidden' }}><div style={{ height: '100%', width: (x[1] / x[2] * 100) + '%', background: '#d9b451' }} /></div>
+                  <div style={{ width: 48, textAlign: 'right', fontSize: 12, color: '#ece7dd' }}>{x[1].toFixed(1)}/{x[2]}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <h3 style={{ color: '#d9b451', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{R.keganTitle}</h3>
+              {[[R.keganNames[0], A.kg[0]], [R.keganNames[1], A.kg[1]], [R.keganNames[2], A.kg[2]]].map((x: any, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
+                  <div style={{ width: 150, fontSize: 12, color: '#9a948a' }}>{x[0]}</div>
+                  <div style={{ flex: 1, height: 10, background: '#26241d', borderRadius: 6, overflow: 'hidden' }}><div style={{ height: '100%', width: (x[1] / 10 * 100) + '%', background: '#d9b451' }} /></div>
+                  <div style={{ width: 48, textAlign: 'right', fontSize: 12, color: '#ece7dd' }}>{x[1].toFixed(1)}/10</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginTop: 14, color: '#b8b2a7', fontSize: 13 }}>{R.atrTitle} : <b style={{ color: '#f2dc9b' }}>{A.mAtr > 0 ? '+' : ''}{A.mAtr.toFixed(1)}</b> \u00b7 {atrLabel}</div>
+          <div style={{ marginTop: 8, color: '#9a948a', fontSize: 13 }}>{(lang === 'fr' ? 'Membres : ' : 'Members: ') + resps.map(r => r.participant).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</div>
+        </section>
+      )}
+
+      {A && showReport && <section id="report" style={{ marginTop: 20, background: '#ffffff', color: INK, borderRadius: 12, padding: '30px 32px' }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #d9b451', paddingBottom: 14 }} className="brk">
           <img src="/wordmark.jpg" alt="All(IA)nce" style={{ maxWidth: 230 }} />
           <div style={{ fontWeight: 700, marginTop: 8, color: INK }}>{R.reportTitle} · {clientName} — {teamName}</div>
