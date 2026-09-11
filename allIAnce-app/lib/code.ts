@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-// Normalise un code d'équipe (insensible à la casse, aux espaces et aux tirets)
+// Normalise un code d'equipe (insensible a la casse, aux espaces et aux tirets)
 export const normCode = (raw: string) => (raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 // Hash (jamais stocker le code brut). Le sel vient de l'env.
 export const hashCode = (raw: string) =>

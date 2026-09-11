@@ -1,38 +1,42 @@
-// Barème All(IA)nce — CALCULÉ CÔTÉ SERVEUR (ne jamais faire confiance au navigateur).
-// Reddition A = 5 items (A3 retiré) sur 25 ; bandes 11/18.
+// Scoring All(IA)nce - reconcilie a l'identique sur la fonction score() du fichier faisant foi.
+// A sur 5 items (A3 retiru00e9), bandes 11/18 ; B 4 items, bandes 9/14 ; Kegan 3 sous-scores.
 export type Answers = Record<string, number>;
-const n = (a: Answers, c: string) => Number(a[c] || 0);
+const v = (a: Answers, c: string) => Number(a[c] || 0);
 
-export function score(a: Answers) {
-  const A = n(a,'A1')+n(a,'A2')+n(a,'A4')+(6-n(a,'A6'))+(6-n(a,'A7'));   // 5–25
-  const B = n(a,'B1')+n(a,'B2')+n(a,'B3')+n(a,'B4');                      // 4–20
-  const bandA = A<=11?'low':A<=18?'mid':'high';
-  const bandB = B<=9?'low':B<=14?'mid':'high';
-  const polarity =
-    bandA==='high'&&bandB==='high' ? 'erratic' :
-    bandA==='high' ? 'over' :
-    bandB==='high' ? 'rigid' :
-    (bandA==='low'&&bandB==='low') ? 'healthy' : 'watch';
+export function band(x: number, a: number, b: number): 'low' | 'mid' | 'high' {
+  return x <= a ? 'low' : x <= b ? 'mid' : 'high';
+}
+export function polarity(A: number, B: number) {
+  const ba = band(A, 11, 18), bb = band(B, 9, 14);
+  if (ba === 'high' && bb === 'high') return 'erratic';
+  if (ba === 'high') return 'over';
+  if (bb === 'high') return 'rigid';
+  if (ba === 'low' && bb === 'low') return 'healthy';
+  return 'watch';
+}
+// Bandes de lecture (memes seuils que le fichier faisant foi)
+export const bandA_   = (x: number) => (x <= 11 ? 'low' : x <= 18 ? 'mid' : 'high');
+export const bandB_   = (x: number) => (x <= 9  ? 'low' : x <= 14 ? 'mid' : 'high');
+export const bandC5_  = (x: number) => (x <= 11 ? 'low' : x <= 18 ? 'mid' : 'high');
+export const bandAtr_ = (x: number) => (x <= 0  ? 'sain' : x <= 7 ? 'vigil' : 'prob');
 
-  const container = n(a,'I1')+n(a,'I2')+n(a,'I3');
-  const difference= n(a,'I4')+n(a,'I5')+n(a,'I6');
-  const exchange  = n(a,'I7')+n(a,'I8');
-
-  const cInd = n(a,'K1')+n(a,'K5')+n(a,'K9')+n(a,'K13')+n(a,'K17');       // /25
-  const cColl= n(a,'K2')+n(a,'K6')+n(a,'K10')+n(a,'K14')+n(a,'K18');
-  const cSig = n(a,'K3')+n(a,'K7')+n(a,'K11')+n(a,'K15')+n(a,'K19');
-  const atrophy = cSig - cInd;                                           // report du fardeau
+export function score(ans: Answers) {
+  const A = v(ans,'A1') + v(ans,'A2') + v(ans,'A4') + (6 - v(ans,'A6')) + (6 - v(ans,'A7')); // 5-25
+  const B = v(ans,'B1') + v(ans,'B2') + v(ans,'B3') + v(ans,'B4');                            // 4-20
+  const cInd  = v(ans,'K1') + v(ans,'K5') + v(ans,'K9')  + v(ans,'K13') + v(ans,'K17');
+  const cColl = v(ans,'K2') + v(ans,'K6') + v(ans,'K10') + v(ans,'K14') + v(ans,'K18');
+  const cSig  = v(ans,'K3') + v(ans,'K7') + v(ans,'K11') + v(ans,'K15') + v(ans,'K19');
   const comp = {
-    crea:[n(a,'K1'),n(a,'K2'),n(a,'K3')], cur:[n(a,'K5'),n(a,'K6'),n(a,'K7')],
-    col:[n(a,'K9'),n(a,'K10'),n(a,'K11')], cri:[n(a,'K13'),n(a,'K14'),n(a,'K15')],
-    com:[n(a,'K17'),n(a,'K18'),n(a,'K19')]
+    crea:[v(ans,'K1'),v(ans,'K2'),v(ans,'K3')], cur:[v(ans,'K5'),v(ans,'K6'),v(ans,'K7')],
+    col:[v(ans,'K9'),v(ans,'K10'),v(ans,'K11')], cri:[v(ans,'K13'),v(ans,'K14'),v(ans,'K15')],
+    com:[v(ans,'K17'),v(ans,'K18'),v(ans,'K19')]
   };
-  // Kegan (niveau de conscience) — 2 items/stade
-  const kSoc = n(a,'KG1')+n(a,'KG2');
-  const kAut = n(a,'KG3')+n(a,'KG4');
-  const kTra = n(a,'KG5')+n(a,'KG6');
-  const l1 = n(a,'L1'), l2 = n(a,'L2');
-
-  return { A, bandA, B, bandB, polarity, container, difference, exchange,
-           cInd, cColl, cSig, atrophy, comp, kSoc, kAut, kTra, l1, l2 };
+  const container  = v(ans,'I1') + v(ans,'I2') + v(ans,'I3');
+  const difference = v(ans,'I4') + v(ans,'I5') + v(ans,'I6');
+  const exchange   = v(ans,'I7') + v(ans,'I8');
+  const kSoc = v(ans,'KG1') + v(ans,'KG2');   // socialise
+  const kAut = v(ans,'KG3') + v(ans,'KG4');   // auteur de soi
+  const kTra = v(ans,'KG5') + v(ans,'KG6');   // auto-transformateur
+  return { A, B, pol: polarity(A, B), cInd, cColl, cSig, atrophy: cSig - cInd,
+           comp, container, difference, exchange, kSoc, kAut, kTra };
 }
