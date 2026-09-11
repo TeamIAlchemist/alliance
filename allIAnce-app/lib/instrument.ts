@@ -410,10 +410,10 @@ export const SCORED_COUNT = ITEMS.filter(i => !i.open).length;
 
 export const SECTION_ORDER = ['reddition','resistance','hsd','comp','kegan','synth'];
 export const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
-  reddition:  { fr: "Votre relation a l'IA",                 en: 'Your relationship with AI' },
-  resistance: { fr: "Votre distance a l'IA",                 en: 'Your distance from AI' },
-  hsd:        { fr: "La dynamique de votre equipe face a l'IA", en: "Your team's dynamics facing AI" },
-  comp:       { fr: 'Competences',                            en: 'Competencies' },
-  kegan:      { fr: 'Regards complementaires',                en: 'Additional perspectives' },
-  synth:      { fr: 'Synthese - vision & premier pas',        en: 'Synthesis - vision & first step' },
+  reddition:  { fr: "Votre relation à l'IA",                 en: 'Your relationship with AI' },
+  resistance: { fr: "Votre distance à l'IA",                 en: 'Your distance from AI' },
+  hsd:        { fr: "La dynamique de votre équipe face à l'IA", en: "Your team's dynamics facing AI" },
+  comp:       { fr: 'Compétences',                            en: 'Competencies' },
+  kegan:      { fr: 'Regards complémentaires',                en: 'Additional perspectives' },
+  synth:      { fr: 'Synthèse — vision & premier pas',        en: 'Synthesis - vision & first step' },
 };

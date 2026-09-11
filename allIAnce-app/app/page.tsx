@@ -31,15 +31,15 @@ export default function Home() {
         <p style={{ color: '#9a948a', marginTop: 8 }}>ou comment faire alliance avec l&apos;IA</p>
 
         <p style={{ color: '#b8b2a7', maxWidth: 520, margin: '20px auto 0', lineHeight: 1.6 }}>
-          Un miroir en quelques minutes : ou en etes-vous, individuellement et en equipe,
-          dans votre relation a l&apos;IA &mdash; entre reddition et resistance ?
+          Un miroir en quelques minutes : où en êtes-vous, individuellement et en équipe,
+          dans votre relation à l&apos;IA &mdash; entre reddition et résistance ?
         </p>
 
         <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 }}>
           <button onClick={() => router.push('/start')}
                   style={{ padding: '14px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
                            fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD }}>
-            Je reponds au diagnostic
+            Je réponds au diagnostic
           </button>
           <button onClick={() => router.push('/facilitator')}
                   style={{ padding: '14px 22px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,

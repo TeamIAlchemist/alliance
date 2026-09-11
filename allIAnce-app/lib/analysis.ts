@@ -247,6 +247,6 @@ export const EXPL = {
 }
 } as const;
 
-export const POL_LABELS = { fr:{over:'Reddition cognitive',rigid:'Refus rigide',healthy:'Integration saine',erratic:'Jugement oscillant',watch:'Zone de transition'}, en:{over:'Cognitive surrender',rigid:'Rigid refusal',healthy:'Healthy integration',erratic:'Oscillating judgement',watch:'Transition zone'} } as const;
-export const COMP_LABELS = { fr:{crea:'Creativite',cur:'Curiosite',col:'Collaboration',cri:'Esprit critique',com:'Communication'}, en:{crea:'Creativity',cur:'Curiosity',col:'Collaboration',cri:'Critical thinking',com:'Communication'} } as const;
-export const KEGAN_LABELS = { fr:{socialized:'Esprit socialise',selfAuthoring:'Esprit auteur de soi',selfTransforming:'Esprit auto-transformateur'}, en:{socialized:'Socialized mind',selfAuthoring:'Self-authoring mind',selfTransforming:'Self-transforming mind'} } as const;
+export const POL_LABELS = { fr:{over:'Reddition cognitive',rigid:'Refus rigide',healthy:'Intégration saine',erratic:'Jugement oscillant',watch:'Zone de transition'}, en:{over:'Cognitive surrender',rigid:'Rigid refusal',healthy:'Healthy integration',erratic:'Oscillating judgement',watch:'Transition zone'} } as const;
+export const COMP_LABELS = { fr:{crea:'Créativité',cur:'Curiosité',col:'Collaboration',cri:'Esprit critique',com:'Communication'}, en:{crea:'Creativity',cur:'Curiosity',col:'Collaboration',cri:'Critical thinking',com:'Communication'} } as const;
+export const KEGAN_LABELS = { fr:{socialized:'Esprit socialisé',selfAuthoring:'Esprit auteur de soi',selfTransforming:'Esprit auto-transformateur'}, en:{socialized:'Socialized mind',selfAuthoring:'Self-authoring mind',selfTransforming:'Self-transforming mind'} } as const;

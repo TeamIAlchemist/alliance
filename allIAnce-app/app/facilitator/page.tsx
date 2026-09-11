@@ -3,14 +3,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase';
 import { polarity, bandA_, bandB_, bandC5_, bandAtr_ } from '@/lib/scoring';
 import { POL_LABELS, COMP_LABELS, EXPL as EXPL_ } from '@/lib/analysis';
-const EXPL: any = EXPL_;
 import { RC } from '@/lib/report-content';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ScatterChart, Scatter, XAxis, YAxis,
   ReferenceArea, ReferenceLine, ResponsiveContainer, Legend, Tooltip,
 } from 'recharts';
 
+const EXPL: any = EXPL_;
 const GOLD = 'linear-gradient(90deg,#a6643c,#d9b451,#f2dc9b,#d9b451)';
+// Palette RAPPORT (feuille claire, calee sur les PDF de reference)
+const INK = '#1a1a1a', MUT = '#666', GH = '#8a6a12', GN = '#c69214', ACC = '#a6791f',
+  LINE = '#eadfbf', TRACK = '#efe7d2', BOX = '#faf6ea', BOXB = '#ecdca0';
 type Lang = 'fr' | 'en';
 let _db: ReturnType<typeof supabaseBrowser> | null = null;
 const getDb = () => (_db ??= supabaseBrowser());
@@ -44,7 +47,7 @@ export default function Facilitator() {
     const { data } = await getDb().auth.getSession();
     const r = await fetch('/api/facilitator/team', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientName: nc, teamName: nt, code: ncode, accessToken: data.session?.access_token }) });
-    if (r.ok) { setMsg((lang === 'fr' ? 'Cree. Code a diffuser : ' : 'Created. Code to share: ') + ncode); setNc(''); setNt(''); setNcode('');
+    if (r.ok) { setMsg((lang === 'fr' ? 'Créé. Code à diffuser : ' : 'Created. Code to share: ') + ncode); setNc(''); setNt(''); setNcode('');
       getDb().from('clients').select('id,name').then(({ data }) => setClients(data || [])); }
     else setMsg('Erreur : ' + ((await r.json()).error || r.status));
   }
@@ -83,66 +86,67 @@ export default function Facilitator() {
     </main>
   );
 
-  const H3 = ({ c }: { c: string }) => <h3 style={{ color: '#d9b451', fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', borderBottom: '1px solid #26241d', paddingBottom: 6, marginTop: 26 }}>{c}</h3>;
-  const P = ({ c }: { c: string }) => <p style={{ color: '#b8b2a7', fontSize: 13.5, lineHeight: 1.6 }}>{c}</p>;
+  // --- Composants du RAPPORT (feuille claire) ---
+  const H3 = ({ c }: { c: string }) => <h3 style={{ color: GH, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', borderBottom: '1px solid ' + LINE, paddingBottom: 6, marginTop: 26 }}>{c}</h3>;
+  const P = ({ c }: { c: string }) => <p style={{ color: '#333', fontSize: 13.5, lineHeight: 1.6 }}>{c}</p>;
+  const UL = ({ items }: { items: readonly string[] }) => <ul style={{ color: '#333', fontSize: 13, paddingLeft: 18 }}>{items.map((x, i) => <li key={i} style={{ margin: '5px 0' }}>{x}</li>)}</ul>;
   const Bar = ({ lab, val, max }: { lab: string; val: number; max: number }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }} className="brk">
-      <div style={{ width: 150, fontSize: 12, color: '#9a948a' }}>{lab}</div>
-      <div style={{ flex: 1, height: 8, background: '#26241d', borderRadius: 6, overflow: 'hidden' }}><div style={{ height: '100%', width: Math.max(0, Math.min(100, val / max * 100)) + '%', backgroundImage: GOLD }} /></div>
-      <div style={{ width: 54, textAlign: 'right', fontSize: 12 }}>{val.toFixed(1)}/{max}</div>
+      <div style={{ width: 160, fontSize: 12.5, color: '#444' }}>{lab}</div>
+      <div style={{ flex: 1, height: 12, background: TRACK, borderRadius: 6, overflow: 'hidden' }}><div style={{ height: '100%', width: Math.max(0, Math.min(100, val / max * 100)) + '%', background: '#d9b451' }} /></div>
+      <div style={{ width: 52, textAlign: 'right', fontSize: 12.5, color: '#333' }}>{val.toFixed(1)}/{max}</div>
     </div>
   );
   const Interp = ({ pill, e }: { pill: string; e: any }) => (
-    <div style={{ background: '#101012', border: '1px solid #26241d', borderLeft: '3px solid #d9b451', borderRadius: 8, padding: '10px 12px', margin: '8px 0', fontSize: 13.5 }} className="brk">
-      <span style={{ border: '1px solid #d9b451', color: '#d9b451', borderRadius: 20, fontSize: 10, padding: '1px 8px', textTransform: 'uppercase', marginRight: 6 }}>{pill}</span>
-      <span>{e.t}</span>{e.c && <div style={{ color: '#9a948a', marginTop: 4, fontStyle: 'italic' }}>&#10148; {e.c}</div>}
+    <div style={{ background: BOX, border: '1px solid ' + BOXB, borderLeft: '3px solid #d9b451', borderRadius: 8, padding: '10px 12px', margin: '8px 0', fontSize: 13.5, color: '#333' }} className="brk">
+      <span style={{ border: '1px solid ' + GN, color: GH, borderRadius: 20, fontSize: 10, padding: '1px 8px', textTransform: 'uppercase', marginRight: 6 }}>{pill}</span>
+      <span>{e.t}</span>{e.c && <div style={{ color: '#7a6a3a', marginTop: 4, fontStyle: 'italic' }}>&#10148; {e.c}</div>}
     </div>
   );
-  const kpi = (n: string, l: string) => <div style={{ flex: 1, minWidth: 130, background: '#101012', border: '1px solid #26241d', borderRadius: 10, padding: 14, textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 800, color: '#f2dc9b' }}>{n}</div><div style={{ fontSize: 11, color: '#9a948a', textTransform: 'uppercase', letterSpacing: 1 }}>{l}</div></div>;
+  const kpi = (n: string, l: string) => <div style={{ flex: 1, minWidth: 130, background: '#fff', border: '1px solid ' + BOXB, borderRadius: 10, padding: 14, textAlign: 'center' }}><div style={{ fontSize: 20, fontWeight: 800, color: GN }}>{n}</div><div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>{l}</div></div>;
   const atrBand = A ? (bandAtr_(A.mAtr) as string) : 'sain';
   const atrLabel = { fr: { sain: 'Sain', vigil: 'Vigilance', prob: 'Atrophie probable' }, en: { sain: 'Healthy', vigil: 'Watch', prob: 'Likely atrophy' } }[lang][atrBand as 'sain'];
   const bA = A ? (bandA_(A.mA) as string) : 'low', bB = A ? (bandB_(A.mB) as string) : 'low', pol = A ? (polarity(A.mA, A.mB) as string) : 'watch';
   const bI = A ? (bandC5_(A.mCInd) as string) : 'low', bS = A ? (bandC5_(A.mCSig) as string) : 'low';
   const kStages = ['socialized', 'selfAuthoring', 'selfTransforming'];
-  const bandPill = (b: string) => (({ fr: { low: 'Faible', mid: 'Moyen', high: 'Eleve' }, en: { low: 'Low', mid: 'Average', high: 'High' } } as any)[lang][b]);
+  const bandPill = (b: string) => (({ fr: { low: 'Faible', mid: 'Moyen', high: 'Élevé' }, en: { low: 'Low', mid: 'Average', high: 'High' } } as any)[lang][b]);
 
   return (
     <main style={wrap}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="noprint">
-        <h2 style={{ margin: 0 }}>{lang === 'fr' ? 'Clients' : 'Clients'}</h2>
+        <h2 style={{ margin: 0 }}>Clients</h2>
         <div style={{ display: 'flex', gap: 10 }}>
           <span onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'EN' : 'FR'}</span>
           {teamName && <span onClick={() => window.print()} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#c9b98f' }}>{lang === 'fr' ? 'Imprimer / PDF' : 'Print / PDF'}</span>}
-          <span onClick={logout} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.25)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#9a948a' }}>{lang === 'fr' ? 'Se deconnecter' : 'Sign out'}</span>
+          <span onClick={logout} style={{ cursor: 'pointer', border: '1px solid rgba(217,180,81,0.25)', borderRadius: 999, padding: '4px 12px', fontSize: 13, color: '#9a948a' }}>{lang === 'fr' ? 'Se déconnecter' : 'Sign out'}</span>
         </div>
       </div>
 
       <div className="noprint" style={{ background: '#141418', border: '1px solid rgba(217,180,81,0.15)', borderRadius: 12, padding: 14, marginTop: 14 }}>
-        <div style={{ fontSize: 12, color: '#9a948a', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>{lang === 'fr' ? 'Nouvelle equipe' : 'New team'}</div>
+        <div style={{ fontSize: 12, color: '#9a948a', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>{lang === 'fr' ? 'Nouvelle équipe' : 'New team'}</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input placeholder={lang === 'fr' ? 'Nom du client' : 'Client name'} value={nc} onChange={e => setNc(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
-          <input placeholder={lang === 'fr' ? "Nom de l'equipe" : 'Team name'} value={nt} onChange={e => setNt(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
+          <input placeholder={lang === 'fr' ? "Nom de l'équipe" : 'Team name'} value={nt} onChange={e => setNt(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
           <input placeholder="TIA-XXXX-XXXX" value={ncode} onChange={e => setNcode(e.target.value)} style={{ flex: 1, minWidth: 140, padding: 10, borderRadius: 8, background: '#0d0d0d', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)' }} />
-          <button onClick={createTeam} disabled={!nt || !ncode || !nc} style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, cursor: 'pointer' }}>{lang === 'fr' ? 'Creer' : 'Create'}</button>
+          <button onClick={createTeam} disabled={!nt || !ncode || !nc} style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, cursor: 'pointer' }}>{lang === 'fr' ? 'Créer' : 'Create'}</button>
         </div>
         {msg && <div style={{ fontSize: 13, color: '#c9b98f', marginTop: 8 }}>{msg}</div>}
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }} className="noprint">
         {clients.map(c => <button key={c.id} onClick={() => openClient(c)} style={{ padding: '8px 14px', borderRadius: 8, background: '#141418', color: '#e7c86a', border: '1px solid rgba(217,180,81,0.4)', cursor: 'pointer' }}>{c.name}</button>)}
-        {!clients.length && <p style={{ color: '#9a948a' }}>{lang === 'fr' ? 'Aucun client. Cree une equipe ci-dessus.' : 'No client yet. Create a team above.'}</p>}
+        {!clients.length && <p style={{ color: '#9a948a' }}>{lang === 'fr' ? 'Aucun client. Crée une équipe ci-dessus.' : 'No client yet. Create a team above.'}</p>}
       </div>
       {teams.length > 0 && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }} className="noprint">
         {teams.map(tm => <button key={tm.id} onClick={() => openTeam(tm)} style={{ padding: '8px 14px', borderRadius: 8, background: '#141418', color: '#ece7dd', border: '1px solid rgba(217,180,81,0.25)', cursor: 'pointer' }}>{tm.name}</button>)}
       </div>}
-      {teamName && !A && <p style={{ color: '#9a948a', marginTop: 20 }}>{lang === 'fr' ? 'Aucune reponse pour cette equipe.' : 'No responses for this team.'}</p>}
+      {teamName && !A && <p style={{ color: '#9a948a', marginTop: 20 }}>{lang === 'fr' ? 'Aucune réponse pour cette équipe.' : 'No responses for this team.'}</p>}
 
-      {A && <section style={{ marginTop: 20 }}>
-        {/* En-tete */}
+      {A && <section id="report" style={{ marginTop: 20, background: '#ffffff', color: INK, borderRadius: 12, padding: '30px 32px' }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #d9b451', paddingBottom: 14 }} className="brk">
-          <img src="/wordmark.jpg" alt="All(IA)nce" style={{ maxWidth: 240 }} />
-          <div style={{ fontWeight: 700, marginTop: 8 }}>{R.reportTitle} · {clientName} — {teamName}</div>
-          <div style={{ color: '#9a948a', fontSize: 13, fontStyle: 'italic' }}>{R.subtitle} · {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB')}</div>
+          <img src="/wordmark.jpg" alt="All(IA)nce" style={{ maxWidth: 230 }} />
+          <div style={{ fontWeight: 700, marginTop: 8, color: INK }}>{R.reportTitle} · {clientName} — {teamName}</div>
+          <div style={{ color: MUT, fontSize: 13, fontStyle: 'italic' }}>{R.subtitle} · {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB')}</div>
         </div>
         <P c={R.intro} />
 
@@ -151,117 +155,98 @@ export default function Facilitator() {
         </div>
         <H3 c={R.howToReadTitle} />{R.howToRead.map((x, i) => <P key={i} c={x} />)}
 
-        {/* Polarite */}
         <H3 c={R.polTitle} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#9a948a' }}><span>{R.kpi.red}</span><span>{R.kpi.res}</span></div>
-        <div style={{ position: 'relative', height: 16, borderRadius: 10, background: 'linear-gradient(90deg,#a6643c,#3a3a3e,#1f3d3d)', border: '1px solid #26241d' }}>
-          <div style={{ position: 'absolute', top: -4, left: (posFor(A.mA, A.mB) * 100).toFixed(1) + '%', width: 4, height: 24, background: '#f2dc9b', borderRadius: 3, transform: 'translateX(-50%)' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: MUT }}><span>{R.kpi.red}</span><span>{R.kpi.res}</span></div>
+        <div style={{ position: 'relative', height: 16, borderRadius: 10, background: 'linear-gradient(90deg,#a6643c,#c9c3ba,#1f3d3d)', border: '1px solid ' + LINE }}>
+          <div style={{ position: 'absolute', top: -4, left: (posFor(A.mA, A.mB) * 100).toFixed(1) + '%', width: 4, height: 24, background: '#8a6a12', borderRadius: 3, transform: 'translateX(-50%)' }} />
         </div>
         <P c={R.polText} />
 
-        {/* Carte */}
         <H3 c={R.mapTitle} />
         <div style={{ height: 320 }} className="brk"><ResponsiveContainer><ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
-          <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.10} />
-          <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.16} />
-          <ReferenceLine x={12} stroke="#ffffff22" /><ReferenceLine y={18} stroke="#ffffff22" />
-          <XAxis type="number" dataKey="x" domain={[4, 20]} tick={{ fill: '#9a948a', fontSize: 11 }} />
-          <YAxis type="number" dataKey="y" domain={[5, 25]} tick={{ fill: '#9a948a', fontSize: 11 }} />
+          <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.12} />
+          <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.12} />
+          <ReferenceLine x={12} stroke="#00000018" /><ReferenceLine y={18} stroke="#00000018" />
+          <XAxis type="number" dataKey="x" domain={[4, 20]} tick={{ fill: MUT, fontSize: 11 }} />
+          <YAxis type="number" dataKey="y" domain={[5, 25]} tick={{ fill: MUT, fontSize: 11 }} />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter name={R.kpi.pol} data={A.scatter} fill="#f2dc9b" />
+          <Scatter name={R.kpi.pol} data={A.scatter} fill="#c69214" />
           <Scatter data={[{ x: A.mB, y: A.mA }]} fill="#a6643c" shape="star" />
         </ScatterChart></ResponsiveContainer></div>
         <P c={R.mapText} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{[R.postures.over, R.postures.rigid, R.postures.healthy, R.postures.erratic].map((x, i) => <li key={i} style={{ margin: '4px 0' }}>{x}</li>)}</ul>
+        <UL items={[R.postures.over, R.postures.rigid, R.postures.healthy, R.postures.erratic]} />
 
         <Interp pill={R.kpi.red + ' \u00b7 ' + bandPill(bA)} e={EXPL[lang].A[bA]} />
         <Interp pill={R.kpi.res + ' \u00b7 ' + bandPill(bB)} e={EXPL[lang].B[bB]} />
         <Interp pill={(POL_LABELS as any)[lang][pol]} e={{ t: EXPL[lang].POL[pol], c: '' }} />
 
-        {/* 5 C */}
         <H3 c={R.compTitle} />
         <div style={{ height: 320 }} className="brk"><ResponsiveContainer><RadarChart data={A.radar} outerRadius={110}>
-          <PolarGrid stroke="#333" /><PolarAngleAxis dataKey="comp" tick={{ fill: '#ece7dd', fontSize: 11 }} />
-          <Radar name={R.compLegend.cap} dataKey="cap" stroke="#d9b451" fill="#d9b451" fillOpacity={0.18} />
-          <Radar name={R.compLegend.sig} dataKey="sig" stroke="#a6643c" fill="#a6643c" fillOpacity={0.15} />
-          <Legend wrapperStyle={{ color: '#ece7dd', fontSize: 11 }} />
+          <PolarGrid stroke="#ccc" /><PolarAngleAxis dataKey="comp" tick={{ fill: '#333', fontSize: 11 }} />
+          <Radar name={R.compLegend.cap} dataKey="cap" stroke="#d9b451" fill="#d9b451" fillOpacity={0.30} />
+          <Radar name={R.compLegend.sig} dataKey="sig" stroke="#a6643c" fill="#a6643c" fillOpacity={0.20} />
+          <Legend wrapperStyle={{ color: '#333', fontSize: 11 }} />
         </RadarChart></ResponsiveContainer></div>
-        <P c={R.compText} /><P c={R.compP21} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{R.compRefs.map((x, i) => <li key={i} style={{ margin: '4px 0' }}>{x}</li>)}</ul>
+        <P c={R.compText} /><P c={R.compP21} /><UL items={R.compRefs} />
 
         <Interp pill={R.compLegend.cap + ' \u00b7 ' + bandPill(bI)} e={EXPL[lang].C5IND[bI]} />
         <Interp pill={R.compLegend.sig + ' \u00b7 ' + bandPill(bS)} e={EXPL[lang].C5SIG[bS]} />
 
-        {/* HSD */}
         <H3 c={R.hsdTitle} /><P c={R.hsdText} />
         <Bar lab="Container" val={A.hsd[0]} max={15} /><Bar lab="Difference" val={A.hsd[1]} max={15} /><Bar lab="Exchange" val={A.hsd[2]} max={10} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{R.hsdDefs.map((x, i) => <li key={i} style={{ margin: '4px 0' }}>{x}</li>)}</ul>
-
+        <UL items={R.hsdDefs} />
         <P c={(lang === 'fr' ? 'Maillon faible ici : ' : 'Weakest link here: ') + ['Container', 'Difference', 'Exchange'][A.weakHsd] + '.'} />
 
-        {/* Atrophie */}
-        <H3 c={R.atrTitle + ' : ' + (A.mAtr > 0 ? '+' : '') + A.mAtr.toFixed(1) + '  ·  ' + atrLabel} />
-        <P c={R.atrText} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{R.atrLevels.map((x, i) => <li key={i} style={{ margin: '4px 0' }}>{x}</li>)}</ul>
-
+        <H3 c={R.atrTitle + ' : ' + (A.mAtr > 0 ? '+' : '') + A.mAtr.toFixed(1) + '  \u00b7  ' + atrLabel} />
+        <P c={R.atrText} /><UL items={R.atrLevels} />
         <Interp pill={atrLabel} e={EXPL[lang].ATR[atrBand]} />
 
-        {/* Kegan */}
         <H3 c={R.keganTitle} /><P c={R.keganText} />
         <Bar lab={R.keganNames[0]} val={A.kg[0]} max={10} /><Bar lab={R.keganNames[1]} val={A.kg[1]} max={10} /><Bar lab={R.keganNames[2]} val={A.kg[2]} max={10} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{R.keganDefs.map((x, i) => <li key={i} style={{ margin: '4px 0' }}>{x}</li>)}</ul>
-        <P c={(lang === 'fr' ? "Tendance de l'equipe : centre de gravite sur l'esprit " : "Team tendency: centre of gravity on the ") + R.keganNames[A.domK] + (lang === 'fr' ? ". Indicateur, non un verdict : on grandit par elargissement." : " mind. An indicator, not a verdict: we grow by broadening.")} />
-
+        <UL items={R.keganDefs} />
+        <P c={(lang === 'fr' ? "Tendance de l'équipe : centre de gravité sur l'esprit " : 'Team tendency: centre of gravity on the ') + R.keganNames[A.domK] + (lang === 'fr' ? '.' : ' mind.')} />
         <Interp pill={R.keganNames[A.domK]} e={EXPL[lang].KEGAN[kStages[A.domK]]} />
 
-        {/* Vision / nuage */}
         <H3 c={R.visionTitle} /><P c={R.visionText} />
         {(() => {
           const freq: Record<string, number> = {};
           resps.forEach(r => (r.open_answers?.J4 || '').toLowerCase().split(/[^0-9a-zà-ÿ]+/i).forEach((w: string) => { w = w.trim(); if (w.length >= 4 && !STOP.has(w)) freq[w] = (freq[w] || 0) + 1; }));
           const words = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 40);
           if (!words.length) return null; const mx = words[0][1], mn = words[words.length - 1][1];
-          return <div style={{ background: '#101012', border: '1px solid #26241d', borderRadius: 10, padding: 12, lineHeight: 2, textAlign: 'center' }} className="brk">
-            {words.map(([w, f]) => <span key={w} style={{ display: 'inline-block', margin: '3px 9px', color: '#f2dc9b', fontWeight: 700, fontSize: 15 + (mx === mn ? 6 : (f - mn) / (mx - mn) * 30) }}>{w}</span>)}
+          return <div style={{ background: BOX, border: '1px solid ' + BOXB, borderRadius: 10, padding: 12, lineHeight: 2, textAlign: 'center' }} className="brk">
+            {words.map(([w, f]) => <span key={w} style={{ display: 'inline-block', margin: '3px 9px', color: ACC, fontWeight: 700, fontSize: 15 + (mx === mn ? 6 : (f - mn) / (mx - mn) * 30) }}>{w}</span>)}
           </div>;
         })()}
 
-        {/* Ou se situe chacun */}
         <H3 c={R.whereTitle} /><P c={R.whereText} />
-        <div>{resps.map((r, i) => <div key={i} style={{ borderTop: '1px solid #26241d', padding: '8px 0' }} className="brk">
+        <div>{resps.map((r, i) => <div key={i} style={{ borderTop: '1px solid #e7e7e7', padding: '8px 0' }} className="brk">
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <b>{r.participant}</b><span style={{ color: '#9a948a', fontSize: 13 }}>{R.kpi.red} {r.scores.A}/25 · {R.kpi.res} {r.scores.B}/20</span>
-            <span style={{ color: '#e7c86a', fontSize: 13 }}>{(POL_LABELS as any)[lang][r.scores.pol]}</span>
+            <b style={{ color: INK }}>{r.participant}</b><span style={{ color: MUT, fontSize: 13 }}>{R.kpi.red} {r.scores.A}/25 · {R.kpi.res} {r.scores.B}/20</span>
+            <span style={{ color: ACC, fontSize: 13 }}>{(POL_LABELS as any)[lang][r.scores.pol]}</span>
           </div>
-          {r.open_answers?.J4 && <div style={{ color: '#b8b2a7', fontSize: 13, fontStyle: 'italic' }}>« {r.open_answers.J4} »</div>}
+          {r.open_answers?.J4 && <div style={{ color: '#555', fontSize: 13, fontStyle: 'italic' }}>« {r.open_answers.J4} »</div>}
         </div>)}</div>
 
-        {/* Reponses ouvertes par competence */}
         <H3 c={R.openTitle} /><P c={R.openText} />
         {COMP_OPENS.map(([code, k]) => {
-          const ans = resps.filter(r => r.open_answers?.[code]);
-          if (!ans.length) return null;
+          const ans = resps.filter(r => r.open_answers?.[code]); if (!ans.length) return null;
           return <div key={code} style={{ margin: '8px 0' }} className="brk">
-            <div style={{ color: '#e7c86a', fontSize: 13, fontWeight: 700 }}>{(COMP_LABELS as any)[lang][k]}</div>
-            {ans.map((r, i) => <div key={i} style={{ color: '#b8b2a7', fontSize: 13 }}>« {r.open_answers[code]} » <span style={{ color: '#6f6a60' }}>— {r.participant}</span></div>)}
+            <div style={{ color: ACC, fontSize: 13, fontWeight: 700 }}>{(COMP_LABELS as any)[lang][k]}</div>
+            {ans.map((r, i) => <div key={i} style={{ color: '#444', fontSize: 13 }}>« {r.open_answers[code]} » <span style={{ color: '#999' }}>— {r.participant}</span></div>)}
           </div>;
         })}
 
-        {/* Premier pas */}
         <H3 c={R.firstStepTitle} /><P c={R.firstStepText} />
-        {resps.filter(r => r.open_answers?.L6).map((r, i) => <div key={i} style={{ color: '#b8b2a7', fontSize: 13 }}><b>{r.participant}</b> : {r.open_answers.L6}</div>)}
+        {resps.filter(r => r.open_answers?.L6).map((r, i) => <div key={i} style={{ color: '#444', fontSize: 13 }}><b style={{ color: INK }}>{r.participant}</b> : {r.open_answers.L6}</div>)}
 
-        {/* Cadres */}
-        <H3 c={R.framesTitle} /><P c={R.framesText} />
-        <ul style={{ color: '#b8b2a7', fontSize: 13 }}>{R.frames.map((x, i) => <li key={i} style={{ margin: '6px 0' }}>{x}</li>)}</ul>
+        <H3 c={R.framesTitle} /><P c={R.framesText} /><UL items={R.frames} />
 
-        {/* Conclusion */}
-        <div style={{ border: '1px solid rgba(217,180,81,0.4)', borderRadius: 12, padding: 16, marginTop: 20 }} className="brk">
+        <div style={{ border: '1px solid ' + BOXB, background: '#fdfaf1', borderRadius: 12, padding: '4px 16px 16px', marginTop: 20 }} className="brk">
           <H3 c={R.conclTitle} /><P c={R.concl} />
         </div>
-        <div style={{ textAlign: 'center', color: '#6f6a60', fontSize: 12, marginTop: 16 }}>All(IA)nce · Team IAlchemist · Turn AI adoption into gold</div>
+        <div style={{ textAlign: 'center', color: '#999', fontSize: 12, marginTop: 16 }}>All(IA)nce · Team IAlchemist · Turn AI adoption into gold</div>
       </section>}
-      <style>{`@media print{.noprint{display:none!important}main{max-width:100%;background:#fff}.brk{break-inside:avoid;page-break-inside:avoid}}`}</style>
+      <style>{`@media print{.noprint{display:none!important}main{max-width:100%;background:#fff;padding:0}#report{border-radius:0}.brk{break-inside:avoid;page-break-inside:avoid}}`}</style>
     </main>
   );
 }

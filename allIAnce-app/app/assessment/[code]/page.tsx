@@ -6,9 +6,9 @@ import { ITEMS, SCORED_COUNT, SECTION_LABELS, SECTION_ORDER, Item } from '@/lib/
 const GOLD = 'linear-gradient(90deg,#a6643c,#d9b451,#f2dc9b,#d9b451)';
 type Lang = 'fr' | 'en';
 const STR = {
-  fr: { title: 'Diagnostic All(IA)nce', id: 'Votre identifiant (prenom, initiales ou pseudo)',
-        low: 'Pas du tout', high: 'Tout a fait', optional: '(facultatif)',
-        submit: 'Envoyer mes reponses', progress: 'repondues', done: 'Merci - vos reponses sont enregistrees.',
+  fr: { title: 'Diagnostic All(IA)nce', id: 'Votre identifiant (prénom, initiales ou pseudo)',
+        low: 'Pas du tout', high: 'Tout à fait', optional: '(facultatif)',
+        submit: 'Envoyer mes réponses', progress: 'répondues', done: 'Merci — vos réponses sont enregistrées.',
         need: 'Renseignez votre identifiant pour commencer.' },
   en: { title: 'All(IA)nce diagnostic', id: 'Your identifier (first name, initials or nickname)',
         low: 'Not at all', high: 'Fully', optional: '(optional)',
@@ -44,7 +44,7 @@ export default function Assessment() {
       });
       if (r.ok) setDone(true);
       else alert('Erreur : ' + ((await r.json()).error || r.status));
-    } catch (e) { alert('Erreur reseau'); }
+    } catch (e) { alert('Erreur réseau'); }
     setBusy(false);
   }
 
@@ -108,8 +108,7 @@ export default function Assessment() {
                              style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8,
                                       cursor: 'pointer', fontWeight: 700,
                                       color: sel ? '#2a1e0a' : '#ece7dd',
-                                      backgroundImage: sel ? GOLD : 'none',
-                                      background: sel ? undefined : '#0d0d0d',
+                                                                            background: sel ? GOLD : '#0d0d0d',
                                       border: '1px solid rgba(217,180,81,0.25)' }}>{n}</div>
                       );
                     })}
@@ -132,7 +131,7 @@ export default function Assessment() {
                        opacity: complete && !busy ? 1 : 0.5 }}>
         {busy ? '...' : t.submit}
       </button>
-      {!participant.trim() && <p style={{ color: '#8a8378', fontSize: 13, marginTop: 8 }}>{t.need}</p>}
+      {!complete && <p style={{ color: '#8a8378', fontSize: 13, marginTop: 8 }}>{answeredScored < SCORED_COUNT ? (lang === 'fr' ? `Il reste ${SCORED_COUNT - answeredScored} question(s) à répondre.` : `${SCORED_COUNT - answeredScored} question(s) left.`) : t.need}</p>}
     </main>
   );
 }
