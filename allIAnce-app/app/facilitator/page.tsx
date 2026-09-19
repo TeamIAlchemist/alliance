@@ -220,8 +220,10 @@ export default function Facilitator() {
             <div style={{ flex: 1, minWidth: 300 }}>
               <h3 style={{ color: '#d9b451', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{R.mapTitle}</h3>
               <div style={{ height: 300 }}><ResponsiveContainer><ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
-                <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.14} />
-                <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.18} />
+                <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.14} label={{ value: (POL_LABELS as any)[lang].over, position: 'insideTopLeft', fill: 'rgba(236,231,221,0.6)', fontSize: 11, fontWeight: 600 }} />
+                <ReferenceArea x1={12} x2={20} y1={18} y2={25} fill="#a6643c" fillOpacity={0} label={{ value: (POL_LABELS as any)[lang].erratic, position: 'insideTopRight', fill: 'rgba(236,231,221,0.6)', fontSize: 11, fontWeight: 600 }} />
+                <ReferenceArea x1={4} x2={12} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0} label={{ value: (POL_LABELS as any)[lang].healthy, position: 'insideBottomLeft', fill: 'rgba(236,231,221,0.6)', fontSize: 11, fontWeight: 600 }} />
+                <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.18} label={{ value: (POL_LABELS as any)[lang].rigid, position: 'insideBottomRight', fill: 'rgba(236,231,221,0.6)', fontSize: 11, fontWeight: 600 }} />
                 <ReferenceLine x={12} stroke="#ffffff22" /><ReferenceLine y={18} stroke="#ffffff22" />
                 <XAxis type="number" dataKey="x" domain={[4, 20]} tick={{ fill: '#9a948a', fontSize: 11 }} />
                 <YAxis type="number" dataKey="y" domain={[5, 25]} tick={{ fill: '#9a948a', fontSize: 11 }} />
@@ -289,8 +291,10 @@ export default function Facilitator() {
 
         <H3 c={R.mapTitle} />
         <div style={{ height: 320 }} className="brk"><ResponsiveContainer><ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
-          <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.12} />
-          <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.12} />
+          <ReferenceArea x1={4} x2={12} y1={18} y2={25} fill="#a6643c" fillOpacity={0.12} label={{ value: (POL_LABELS as any)[lang].over, position: 'insideTopLeft', fill: '#7a4a2a', fontSize: 11, fontWeight: 700 }} />
+          <ReferenceArea x1={12} x2={20} y1={18} y2={25} fill="#a6643c" fillOpacity={0} label={{ value: (POL_LABELS as any)[lang].erratic, position: 'insideTopRight', fill: '#7a6a3a', fontSize: 11, fontWeight: 700 }} />
+          <ReferenceArea x1={4} x2={12} y1={5} y2={18} fill="#a6643c" fillOpacity={0} label={{ value: (POL_LABELS as any)[lang].healthy, position: 'insideBottomLeft', fill: '#3a6a4a', fontSize: 11, fontWeight: 700 }} />
+          <ReferenceArea x1={12} x2={20} y1={5} y2={18} fill="#1f3d3d" fillOpacity={0.12} label={{ value: (POL_LABELS as any)[lang].rigid, position: 'insideBottomRight', fill: '#2f5a52', fontSize: 11, fontWeight: 700 }} />
           <ReferenceLine x={12} stroke="#00000018" /><ReferenceLine y={18} stroke="#00000018" />
           <XAxis type="number" dataKey="x" domain={[4, 20]} tick={{ fill: MUT, fontSize: 11 }} />
           <YAxis type="number" dataKey="y" domain={[5, 25]} tick={{ fill: MUT, fontSize: 11 }} />

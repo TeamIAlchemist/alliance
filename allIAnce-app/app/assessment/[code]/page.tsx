@@ -11,12 +11,12 @@ const GOLD = 'linear-gradient(90deg,#a6643c,#d9b451,#f2dc9b,#d9b451)';
 type Lang = 'fr' | 'en';
 const STR = {
   fr: { title: 'Diagnostic All(IA)nce', id: 'Votre identifiant (prénom, initiales ou pseudo)',
-        low: 'Pas du tout', high: 'Tout à fait', optional: '(facultatif)',
+        low: 'Pas du tout', high: 'Tout à fait', optional: '(facultatif)', required: '(obligatoire)',
         submit: 'Envoyer mes réponses', progress: 'répondues', done: 'Merci — vos réponses sont enregistrées.',
         need: 'Renseignez votre identifiant pour commencer.',
         thanks: 'Merci !', saved: 'Vos réponses sont enregistrées. Voici votre positionnement personnel :', red: 'Reddition', res: 'Résistance', finish: 'Terminer' },
   en: { title: 'All(IA)nce diagnostic', id: 'Your identifier (first name, initials or nickname)',
-        low: 'Not at all', high: 'Fully', optional: '(optional)',
+        low: 'Not at all', high: 'Fully', optional: '(optional)', required: '(required)',
         submit: 'Submit my answers', progress: 'answered', done: 'Thank you - your answers have been saved.',
         need: 'Enter your identifier to begin.',
         thanks: 'Thank you!', saved: 'Your answers are saved. Here is your personal positioning:', red: 'Surrender', res: 'Resistance', finish: 'Finish' },
@@ -40,7 +40,8 @@ export default function Assessment() {
   }, []);
 
   const answeredScored = Object.keys(answers).length;
-  const complete = answeredScored >= SCORED_COUNT && participant.trim().length > 0;
+  const opensDone = (open['J4'] || '').trim().length > 0 && (open['L6'] || '').trim().length > 0;
+  const complete = answeredScored >= SCORED_COUNT && participant.trim().length > 0 && opensDone;
 
   async function submit() {
     setBusy(true);
@@ -109,7 +110,7 @@ export default function Assessment() {
                                         borderRadius: 12, padding: 16, marginTop: 12 }}>
               <div style={{ marginBottom: 10 }}>
                 {lang === 'fr' ? it.fr : it.en}{' '}
-                {it.open && <span style={{ color: '#8a8378', fontSize: 13 }}>{t.optional}</span>}
+                {it.open && <span style={{ color: (it.code === 'J4' || it.code === 'L6') ? '#e7c86a' : '#8a8378', fontSize: 13 }}>{(it.code === 'J4' || it.code === 'L6') ? t.required : t.optional}</span>}
               </div>
               {it.open ? (
                 <textarea value={open[it.code] || ''} onChange={e => setOpen({ ...open, [it.code]: e.target.value })}
@@ -148,7 +149,7 @@ export default function Assessment() {
                        opacity: complete && !busy ? 1 : 0.5 }}>
         {busy ? '...' : t.submit}
       </button>
-      {!complete && <p style={{ color: '#8a8378', fontSize: 13, marginTop: 8 }}>{answeredScored < SCORED_COUNT ? (lang === 'fr' ? `Il reste ${SCORED_COUNT - answeredScored} question(s) à répondre.` : `${SCORED_COUNT - answeredScored} question(s) left.`) : t.need}</p>}
+      {!complete && <p style={{ color: '#8a8378', fontSize: 13, marginTop: 8 }}>{answeredScored < SCORED_COUNT ? (lang === 'fr' ? `Il reste ${SCORED_COUNT - answeredScored} question(s) à répondre.` : `${SCORED_COUNT - answeredScored} question(s) left.`) : !participant.trim() ? t.need : (lang === 'fr' ? 'Réponds aux deux dernières questions ouvertes (obligatoires).' : 'Answer the two final open questions (required).')}</p>}
     </main>
   );
 }
