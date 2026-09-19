@@ -270,6 +270,9 @@ export default function Facilitator() {
       )}
 
       {A && showReport && <section id="report" style={{ marginTop: 20, background: '#ffffff', color: INK, borderRadius: 12, padding: '30px 32px' }}>
+        <div className="noprint" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+          <button onClick={() => window.print()} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', fontWeight: 700, color: '#2a1e0a', backgroundImage: GOLD, cursor: 'pointer', fontSize: 14 }}>{lang === 'fr' ? 'Imprimer le rapport' : 'Print the report'}</button>
+        </div>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #d9b451', paddingBottom: 14 }} className="brk">
           <img src="/wordmark.jpg" alt="All(IA)nce" style={{ maxWidth: 230 }} />
           <div style={{ fontWeight: 700, marginTop: 8, color: INK }}>{R.reportTitle} · {clientName} — {teamName}</div>
